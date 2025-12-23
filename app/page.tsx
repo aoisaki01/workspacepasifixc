@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trash2, CheckCircle, MessageSquare, Plus, Image as ImageIcon, Loader2, UploadCloud, X, AlertTriangle, Pencil, Save, CornerDownRight, ChevronDown, ChevronUp, Play, Film, FileImage, FileText, Download, Paperclip, Search, Filter, TrendingUp, Calendar } from 'lucide-react';
+import { Trash2, CheckCircle, MessageSquare, Plus, Image as ImageIcon, Loader2, UploadCloud, X, AlertTriangle, Pencil, CornerDownRight, ChevronDown, ChevronUp, Film, FileText, FileImage, Download, Paperclip, Search, Filter, TrendingUp } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
@@ -9,7 +9,7 @@ import { getDatabase, ref, onValue, push, set, remove, update } from 'firebase/d
 
 // --- KONFIGURASI FIREBASE ---
 const firebaseConfig = {
-  // ⚠️ GANTI DENGAN API KEY KAMU SENDIRI
+  // ⚠️ PASTIKAN GANTI INI DENGAN DATA DARI FIREBASE CONSOLE ANDA
   apiKey: "API_KEY_KAMU_DISINI", 
   authDomain: "pasifixc.firebaseapp.com",
   databaseURL: "https://pasifixc-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -148,20 +148,28 @@ export default function InspirationBoard() {
   }, [items, searchQuery, sortBy]);
 
   // ----------------------------------------------------------------
-  // 3. FUNGSI UPLOAD
+  // 3. FUNGSI UPLOAD (DIPERBAIKI)
   // ----------------------------------------------------------------
   const uploadToCloudinary = async (file: File): Promise<string | null> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'ml_default'); 
+    
+    // 🔥 PERBAIKAN DI SINI: Menggunakan preset 'pasifixc_public' (Unsigned)
+    // Pastikan preset ini SUDAH DIBUAT di Cloudinary Settings -> Upload -> Add Upload Preset
+    formData.append('upload_preset', 'pasifixc_public'); 
+    
     try {
       const res = await fetch('https://api.cloudinary.com/v1_1/dl2ijoilh/auto/upload', {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
       return data.secure_url;
-    } catch (error) { return null; }
+    } catch (error) { 
+      console.error("Cloudinary Error:", error);
+      return null; 
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEditMode: boolean = false) => {
@@ -293,7 +301,6 @@ export default function InspirationBoard() {
     // 2. SVG Calculation
     const width = 1000;
     const height = 300;
-    const padding = 20;
     const maxCount = Math.max(...dataPoints.map(d => d.count), 5); // Min scale 5
 
     // Buat koordinat Polyline
